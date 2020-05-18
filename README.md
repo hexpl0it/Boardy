@@ -4,6 +4,8 @@ Boardy is a soundboard with MIDI support developed using WPF and C#, that using 
 
 It has a built in function for search the web and add your sound directly from the websites.
 
+Boardy is good metched with [Voicemeeter](https://www.vb-audio.com/Voicemeeter/index.htm).
+
 
 
 
@@ -23,3 +25,8 @@ It has a built in function for search the web and add your sound directly from t
 - Change config logic, using a single file that contains JSON config file + all sounds used
 - Add more websites support
 - Add DragNDrop support
+
+
+
+
+### ANYONE WHO WANTS TO COLLABORATE IS WELCOME!
