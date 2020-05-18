@@ -11,7 +11,7 @@ Boardy is good metched with [Voicemeeter](https://www.vb-audio.com/Voicemeeter/i
 
 ## Features
 
-- MIDI support with source repeating. Your midi command will repeat to a out MIDI device
+- MIDI support with source repeating. Your midi commands will be repeated to a out MIDI device
 - Direct sound download from websites
 - Precise Playback device for every sound
 
