@@ -1,1 +1,2 @@
-# ![Boardy logo](/source/Logo/boardy_logo.png) Boardy
+# <img src="https://github.com/hexpl0it/Boardy/raw/master/source/Logo/boardy_logo.png" alt="Boardy Logo" width="50" height="50" /> Boardy
+
