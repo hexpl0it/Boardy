@@ -1,2 +1,1 @@
-# Boardy
-Soundboard with MIDI support
+# ![Boardy logo](/source/Logo/boardy_logo.png) Boardy
