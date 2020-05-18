@@ -1,0 +1,19 @@
+﻿<Window x:Class="BoardyWPF.WebSearchMainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BoardyWPF"
+        mc:Ignorable="d"
+        Title="WebSearchMainWindow" Height="450" Width="800" Loaded="Window_Loaded" Background="#2c3d4d">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="35" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <TextBox Name="TbxCerca" HorizontalAlignment="Left" Margin="10,0,0,0" Text="TextBox" TextWrapping="Wrap" VerticalAlignment="Center" Width="245"/>
+        <Button Content="Cerca" Name="BtnCerca" Click="BtnCerca_Click" HorizontalAlignment="Left" Margin="269,0,0,0" VerticalAlignment="Center" Width="76" Grid.Row="0"/>
+        <WrapPanel Name="MainWrapPanel" Background="Transparent" Grid.Row="1">
+        </WrapPanel>
+    </Grid>
+</Window>

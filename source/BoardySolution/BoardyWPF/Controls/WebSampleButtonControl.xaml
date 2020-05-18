@@ -1,0 +1,17 @@
+﻿<UserControl x:Class="BoardyWPF.Controls.WebSampleButtonControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:BoardyWPF.Controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="180" d:DesignWidth="150">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="150*"/>
+            <RowDefinition Height="30*" />
+        </Grid.RowDefinitions>
+        <Button Name="BtnPlaySound" Click="BtnPlaySound_Click" Content="Button"  Grid.Row="0"/>
+        <Button Name="BtnDownloadSound" Click="BtnDownloadSound_Click" Content="Button" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="100,0,0,0" Grid.Row="1"/>
+    </Grid>
+</UserControl>
