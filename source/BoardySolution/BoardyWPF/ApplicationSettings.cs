@@ -11,7 +11,7 @@ namespace BoardyWPF
     public static class ApplicationSettings
     {
         private static InternalSettings _sets;
-        public static int CallbackDeviceID
+        public static string CallbackDeviceID
         {
             get
             {
@@ -23,7 +23,7 @@ namespace BoardyWPF
                 _sets.CallbackDeviceID = value;
             }
         }
-        public static int? MidiInputDeviceID
+        public static string MidiInputDeviceID
         {
             get
             {
@@ -34,7 +34,7 @@ namespace BoardyWPF
                 _sets.MidiInputDeviceID = value;
             }
         }
-        public static int? MidiOutputDeviceID
+        public static string MidiOutputDeviceID
         {
             get
             {
@@ -45,7 +45,7 @@ namespace BoardyWPF
                 _sets.MidiOutputDeviceID = value;
             }
         }
-        public static int? MidiOutputRepeatedDeviceID
+        public static string MidiOutputRepeatedDeviceID
         {
             get
             {
@@ -101,13 +101,13 @@ namespace BoardyWPF
     class InternalSettings
     {
         [JsonProperty]
-        internal int CallbackDeviceID { get; set; }
+        internal string CallbackDeviceID { get; set; }
         [JsonProperty]
-        internal int? MidiInputDeviceID { get; set; }
+        internal string MidiInputDeviceID { get; set; }
         [JsonProperty]
-        internal int? MidiOutputDeviceID { get; set; }
+        internal string MidiOutputDeviceID { get; set; }
         [JsonProperty]
-        internal int? MidiOutputRepeatedDeviceID { get; set; }
+        internal string MidiOutputRepeatedDeviceID { get; set; }
         [JsonProperty]
         internal List<PadControlSettingModel> PadControls { get; set; }
 

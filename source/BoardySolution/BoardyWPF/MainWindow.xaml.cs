@@ -41,14 +41,34 @@ namespace BoardyWPF
                 MainWrapPanel.Children.Add(pc);
             }
 
-            if(ApplicationSettings.MidiInputDeviceID.HasValue)
-                GlobalStaticContext.AttachMidiInDevice(ApplicationSettings.MidiInputDeviceID.Value);
+            int selectedMidiINPUTDevId = -1;
 
-            if (ApplicationSettings.MidiOutputDeviceID.HasValue)
-                GlobalStaticContext.AttachMidiOutDevice(ApplicationSettings.MidiOutputDeviceID.Value);
+            for (int i = 0; i < MidiIn.NumberOfDevices; i++)
+            {
+                if (ApplicationSettings.MidiInputDeviceID == MidiIn.DeviceInfo(i).ProductName)
+                    selectedMidiINPUTDevId = i;
+            }
 
-            if (ApplicationSettings.MidiOutputRepeatedDeviceID.HasValue)
-                GlobalStaticContext.AttachMidiRepeatDevice(ApplicationSettings.MidiOutputRepeatedDeviceID.Value);
+            int selectedMidiOUTPUTDevId = -1;
+            int selectedMidiREPEATEDDevId = -1;
+
+            for (int i = 0; i < MidiOut.NumberOfDevices; i++)
+            {
+                if (ApplicationSettings.MidiOutputDeviceID == MidiOut.DeviceInfo(i).ProductName)
+                    selectedMidiOUTPUTDevId = i;
+                if (ApplicationSettings.MidiOutputRepeatedDeviceID == MidiOut.DeviceInfo(i).ProductName)
+                    selectedMidiREPEATEDDevId = i;
+            }
+
+
+            if (ApplicationSettings.MidiInputDeviceID != null && ApplicationSettings.MidiInputDeviceID != "")
+                GlobalStaticContext.AttachMidiInDevice(selectedMidiINPUTDevId);
+
+            if (ApplicationSettings.MidiOutputDeviceID != null && ApplicationSettings.MidiOutputDeviceID != "")
+                GlobalStaticContext.AttachMidiOutDevice(selectedMidiOUTPUTDevId);
+
+            if (ApplicationSettings.MidiOutputRepeatedDeviceID != null && ApplicationSettings.MidiOutputRepeatedDeviceID != "")
+                GlobalStaticContext.AttachMidiRepeatDevice(selectedMidiREPEATEDDevId);
         }
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)

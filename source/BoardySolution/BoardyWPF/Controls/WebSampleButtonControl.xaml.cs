@@ -78,7 +78,17 @@ namespace BoardyWPF.Controls
                 {
                     waveOut.Stop();
                     waveOut = new WaveOut();
-                    waveOut.DeviceNumber = ApplicationSettings.CallbackDeviceID;
+
+                    int callbackdeviceID = -1;
+
+                    for (int i = 0; i < WaveOut.DeviceCount; i++)
+                    {
+                        if (WaveOut.GetCapabilities(i).ProductName == ApplicationSettings.CallbackDeviceID)
+                            callbackdeviceID = i;
+                    }
+
+
+                    waveOut.DeviceNumber = callbackdeviceID;
                     waveOut.Init(blockAlignedStream);
                     waveOut.Play();
                     while (waveOut.PlaybackState == PlaybackState.Playing)

@@ -43,42 +43,49 @@ namespace BoardyWPF
             Dictionary<int, string> midiInDevices = new Dictionary<int, string>();
             midiInDevices.Add(-1, "");
 
+            int selectedMidiINPUTDevId = -1;
+
             for (int i = 0; i < MidiIn.NumberOfDevices; i++)
+            {
                 midiInDevices.Add(i, MidiIn.DeviceInfo(i).ProductName);
+                if (ApplicationSettings.MidiInputDeviceID == MidiIn.DeviceInfo(i).ProductName)
+                    selectedMidiINPUTDevId = i;
+            }
 
             cbMidiInDevice.ItemsSource = midiInDevices.ToList();
             cbMidiInDevice.SelectedValuePath = "Key";
             cbMidiInDevice.DisplayMemberPath = "Value";
 
-            if (ApplicationSettings.MidiInputDeviceID.HasValue)
-                cbMidiInDevice.SelectedValue = ApplicationSettings.MidiInputDeviceID;
-            else
-                cbMidiInDevice.SelectedValue = -1;
+            cbMidiInDevice.SelectedValue = selectedMidiINPUTDevId;
 
             //Popolo lista Devices Midi Output e Repeater
             Dictionary<int, string> midiOutDevices = new Dictionary<int, string>();
             midiOutDevices.Add(-1, "");
 
+            int selectedMidiOUTPUTDevId = -1;
+            int selectedMidiREPEATEDDevId = -1;
+
             for (int i = 0; i < MidiOut.NumberOfDevices; i++)
+            {
                 midiOutDevices.Add(i, MidiOut.DeviceInfo(i).ProductName);
+                if (ApplicationSettings.MidiInputDeviceID == MidiIn.DeviceInfo(i).ProductName)
+                    selectedMidiOUTPUTDevId = i;
+                if (ApplicationSettings.MidiOutputRepeatedDeviceID == MidiIn.DeviceInfo(i).ProductName)
+                    selectedMidiREPEATEDDevId = i;
+            }
+
 
             cbMidiOutDevice.ItemsSource = midiOutDevices.ToList();
             cbMidiOutDevice.SelectedValuePath = "Key";
             cbMidiOutDevice.DisplayMemberPath = "Value";
 
-            if (ApplicationSettings.MidiOutputDeviceID.HasValue)
-                cbMidiOutDevice.SelectedValue = ApplicationSettings.MidiOutputDeviceID;
-            else
-                cbMidiOutDevice.SelectedValue = -1;
+            cbMidiOutDevice.SelectedValue = selectedMidiOUTPUTDevId;
 
             cbMidiOutRepeaterDevice.ItemsSource = midiOutDevices.ToList();
             cbMidiOutRepeaterDevice.SelectedValuePath = "Key";
             cbMidiOutRepeaterDevice.DisplayMemberPath = "Value";
 
-            if(ApplicationSettings.MidiOutputRepeatedDeviceID.HasValue)
-                cbMidiOutRepeaterDevice.SelectedValue = ApplicationSettings.MidiOutputRepeatedDeviceID;
-            else
-                cbMidiOutRepeaterDevice.SelectedValue = -1;
+            cbMidiOutRepeaterDevice.SelectedValue = selectedMidiREPEATEDDevId;
         }
 
         private void cbAudioDevices_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -88,39 +95,39 @@ namespace BoardyWPF
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            ApplicationSettings.CallbackDeviceID = (int)cbAudioDevices.SelectedValue;
-            
+            ApplicationSettings.CallbackDeviceID = ((KeyValuePair<int, string>)cbAudioDevices.SelectedItem).Value;
 
-            if ((int)cbMidiInDevice.SelectedValue == -1)
+
+            if (((KeyValuePair<int, string>)cbMidiInDevice.SelectedItem).Key == -1)
                 ApplicationSettings.MidiInputDeviceID = null;
             else
-                ApplicationSettings.MidiInputDeviceID = (int)cbMidiInDevice.SelectedValue;
+                ApplicationSettings.MidiInputDeviceID = ((KeyValuePair<int, string>)cbMidiInDevice.SelectedItem).Value;
 
 
-            if ((int)cbMidiOutDevice.SelectedValue == -1)
+            if (((KeyValuePair<int, string>)cbMidiOutDevice.SelectedItem).Key == -1)
                 ApplicationSettings.MidiOutputDeviceID = null;
             else
-                ApplicationSettings.MidiOutputDeviceID = (int)cbMidiOutDevice.SelectedValue;
+                ApplicationSettings.MidiOutputDeviceID = ((KeyValuePair<int, string>)cbMidiOutDevice.SelectedItem).Value;
 
 
-            if ((int)cbMidiOutRepeaterDevice.SelectedValue == -1)
+            if (((KeyValuePair<int, string>)cbMidiOutRepeaterDevice.SelectedItem).Key == -1)
                 ApplicationSettings.MidiOutputRepeatedDeviceID = null;
             else
-                ApplicationSettings.MidiOutputRepeatedDeviceID = (int)cbMidiOutRepeaterDevice.SelectedValue;
+                ApplicationSettings.MidiOutputRepeatedDeviceID = ((KeyValuePair<int, string>)cbMidiOutRepeaterDevice.SelectedItem).Value;
 
 
             ApplicationSettings.SaveConfig();
 
             //Reload Midi Devices
             GlobalStaticContext.DetachAllMidiDevices();
-            if (ApplicationSettings.MidiInputDeviceID.HasValue && ApplicationSettings.MidiInputDeviceID.Value != -1)
-                GlobalStaticContext.AttachMidiInDevice(ApplicationSettings.MidiInputDeviceID.Value);
+            if (((KeyValuePair<int, string>)cbMidiInDevice.SelectedItem).Key != -1)
+                GlobalStaticContext.AttachMidiInDevice(((KeyValuePair<int, string>)cbMidiInDevice.SelectedItem).Key);
 
-            if (ApplicationSettings.MidiOutputDeviceID.HasValue && ApplicationSettings.MidiOutputDeviceID.Value != -1)
-                GlobalStaticContext.AttachMidiOutDevice(ApplicationSettings.MidiOutputDeviceID.Value);
+            if (((KeyValuePair<int, string>)cbMidiOutDevice.SelectedItem).Key != -1)
+                GlobalStaticContext.AttachMidiOutDevice(((KeyValuePair<int, string>)cbMidiOutDevice.SelectedItem).Key);
 
-            if (ApplicationSettings.MidiOutputRepeatedDeviceID.HasValue && ApplicationSettings.MidiOutputRepeatedDeviceID.Value != -1)
-                GlobalStaticContext.AttachMidiRepeatDevice(ApplicationSettings.MidiOutputRepeatedDeviceID.Value);
+            if (((KeyValuePair<int, string>)cbMidiOutRepeaterDevice.SelectedItem).Key != -1)
+                GlobalStaticContext.AttachMidiRepeatDevice(((KeyValuePair<int, string>)cbMidiOutRepeaterDevice.SelectedItem).Key);
 
             this.Close();
         }

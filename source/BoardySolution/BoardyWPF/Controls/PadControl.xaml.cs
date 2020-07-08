@@ -25,20 +25,41 @@ namespace BoardyWPF.Controls
         public PadControl()
         {
             InitializeComponent();
-            _player = new AudioPlayer("", ApplicationSettings.CallbackDeviceID);
+
+            int callbackdeviceID = -1;
+
+            for (int i = 0; i < WaveOut.DeviceCount; i++)
+            {
+                if (WaveOut.GetCapabilities(i).ProductName == ApplicationSettings.CallbackDeviceID)
+                    callbackdeviceID = i;
+            }
+
+            _player = new AudioPlayer("", callbackdeviceID);
             _player.OnSoundStateChange += _player_OnSoundStateChange;
             _player.OnAudioTrackChange += _player_OnAudioTrackChange;
             ChangeVolume(100, false);
         }
 
-        public PadControl(int audiodeviceid, float volume, string audioFilePath, int midiNote, MidiController? volumeSilderContr)
+        public PadControl(string audiodevice, float volume, string audioFilePath, int midiNote, MidiController? volumeSilderContr)
         {
             InitializeComponent();
-            _player = new AudioPlayer("", ApplicationSettings.CallbackDeviceID);
+
+            int audiodeviceID = -1;
+            int callbackdeviceID = -1;
+
+            for (int i = 0; i < WaveOut.DeviceCount; i++)
+            {
+                if (WaveOut.GetCapabilities(i).ProductName == audiodevice)
+                    audiodeviceID = i;
+                if (WaveOut.GetCapabilities(i).ProductName == ApplicationSettings.CallbackDeviceID)
+                    callbackdeviceID = i;
+            }
+
+            _player = new AudioPlayer("", callbackdeviceID);
             _player.OnSoundStateChange += _player_OnSoundStateChange;
             _player.OnAudioTrackChange += _player_OnAudioTrackChange;
 
-            _player.ChangeAudioDevice(audiodeviceid);
+            _player.ChangeAudioDevice(audiodeviceID);
             _player.ChangeAudioTrack(audioFilePath);
             ChangeVolume(Convert.ToInt32(volume * 100), false);
 
@@ -71,16 +92,23 @@ namespace BoardyWPF.Controls
                 _player.ChangeAudioTrack(value);
             }
         }
-        internal int _audioDeviceID
+        internal string _audioDeviceID
         {
             get
             {
-                return _player._idAudioDevice;
+                return WaveOut.GetCapabilities(_player._idAudioDevice).ProductName;
             }
 
             set
             {
-                _player.ChangeAudioDevice(value);
+                int audioDevID = -1;
+
+                for (int i = 0; i < WaveOut.DeviceCount; i++)
+                {
+                    if (WaveOut.GetCapabilities(i).ProductName == value)
+                        audioDevID = i;
+                }
+                _player.ChangeAudioDevice(audioDevID);
             }
         }
         internal int _pushButtonMidiNote = -1;
@@ -187,7 +215,7 @@ namespace BoardyWPF.Controls
                 mi.Uid = "admi-" + i.ToString();
                 mi.Click += AudioDevicesSubMenuItem_Click;
 
-                if (_audioDeviceID == i)
+                if (_audioDeviceID == WaveOut.GetCapabilities(i).ProductName)
                     mi.IsChecked = true;
 
                 AudioDevicesSubMenu.Items.Add(mi);
