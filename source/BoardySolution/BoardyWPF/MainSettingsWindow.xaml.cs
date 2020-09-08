@@ -48,7 +48,7 @@ namespace BoardyWPF
             for (int i = 0; i < MidiIn.NumberOfDevices; i++)
             {
                 midiInDevices.Add(i, MidiIn.DeviceInfo(i).ProductName);
-                if (ApplicationSettings.MidiInputDeviceID == MidiIn.DeviceInfo(i).ProductName)
+                if (ApplicationSettings.MidiInputDeviceID != null && ApplicationSettings.MidiInputDeviceID == MidiIn.DeviceInfo(i).ProductName)
                     selectedMidiINPUTDevId = i;
             }
 
@@ -68,9 +68,9 @@ namespace BoardyWPF
             for (int i = 0; i < MidiOut.NumberOfDevices; i++)
             {
                 midiOutDevices.Add(i, MidiOut.DeviceInfo(i).ProductName);
-                if (ApplicationSettings.MidiInputDeviceID == MidiIn.DeviceInfo(i).ProductName)
+                if (ApplicationSettings.MidiInputDeviceID != null && ApplicationSettings.MidiInputDeviceID == MidiIn.DeviceInfo(i).ProductName)
                     selectedMidiOUTPUTDevId = i;
-                if (ApplicationSettings.MidiOutputRepeatedDeviceID == MidiIn.DeviceInfo(i).ProductName)
+                if (ApplicationSettings.MidiOutputRepeatedDeviceID != null && ApplicationSettings.MidiOutputRepeatedDeviceID == MidiIn.DeviceInfo(i).ProductName)
                     selectedMidiREPEATEDDevId = i;
             }
 

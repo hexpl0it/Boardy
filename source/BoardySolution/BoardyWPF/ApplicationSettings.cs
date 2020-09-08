@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -94,26 +95,33 @@ namespace BoardyWPF
         {
             JsonSerializerSettings settings = new JsonSerializerSettings();
 
-            _sets = JsonConvert.DeserializeObject<InternalSettings>(System.IO.File.ReadAllText(@"config.json"), settings);
+            try
+            {
+                _sets = JsonConvert.DeserializeObject<InternalSettings>(System.IO.File.ReadAllText(@"config.json"), settings);
+            }
+            catch (Exception ex)
+            {
+                _sets = new InternalSettings();
+            }
         }
-    }
 
-    class InternalSettings
-    {
-        [JsonProperty]
-        internal string CallbackDeviceID { get; set; }
-        [JsonProperty]
-        internal string MidiInputDeviceID { get; set; }
-        [JsonProperty]
-        internal string MidiOutputDeviceID { get; set; }
-        [JsonProperty]
-        internal string MidiOutputRepeatedDeviceID { get; set; }
-        [JsonProperty]
-        internal List<PadControlSettingModel> PadControls { get; set; }
-
-        internal InternalSettings()
+        class InternalSettings
         {
+            [JsonProperty]
+            internal string CallbackDeviceID { get; set; }
+            [JsonProperty]
+            internal string MidiInputDeviceID { get; set; }
+            [JsonProperty]
+            internal string MidiOutputDeviceID { get; set; }
+            [JsonProperty]
+            internal string MidiOutputRepeatedDeviceID { get; set; }
+            [JsonProperty]
+            internal List<PadControlSettingModel> PadControls { get; set; }
 
+            internal InternalSettings()
+            {
+                PadControls = new List<PadControlSettingModel>();
+            }
         }
     }
 }
