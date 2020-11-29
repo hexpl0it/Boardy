@@ -36,7 +36,11 @@ namespace BoardyWPF
             cbAudioDevices.SelectedValuePath = "Key";
             cbAudioDevices.DisplayMemberPath = "Value";
 
-            cbAudioDevices.SelectedValue = ApplicationSettings.CallbackDeviceID;
+            try
+            {
+                cbAudioDevices.SelectedValue = ApplicationSettings.CallbackDeviceID;
+            }
+            catch { }
 
 
             //Popolo lista Devices Midi Input
