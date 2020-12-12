@@ -1,6 +1,6 @@
 ﻿using BoardyWPF.Controls;
-using NAudio.Midi;
-using NAudio.Wave;
+using CSCore.CoreAudioAPI;
+using Melanchall.DryWetMidi.Devices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +10,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
@@ -27,10 +26,19 @@ namespace BoardyWPF
         {
             InitializeComponent();
 
-            Dictionary<int, string> outDevices = new Dictionary<int, string>();
+            Dictionary<string, string> outDevices = new Dictionary<string, string>();
 
-            for (int i = 0; i < WaveOut.DeviceCount; i++)
-                outDevices.Add(i, WaveOut.GetCapabilities(i).ProductName);
+            using (var mmdeviceEnumerator = new MMDeviceEnumerator())
+            {
+                using (var mmdeviceCollection = mmdeviceEnumerator.EnumAudioEndpoints(DataFlow.Render, DeviceState.Active))
+                {
+                    foreach (var device in mmdeviceCollection)
+                    {
+                        outDevices.Add(device.DevicePath, device.FriendlyName);
+                    }
+                }
+            }
+
 
             cbAudioDevices.ItemsSource = outDevices.ToList();
             cbAudioDevices.SelectedValuePath = "Key";
@@ -44,38 +52,30 @@ namespace BoardyWPF
 
 
             //Popolo lista Devices Midi Input
-            Dictionary<int, string> midiInDevices = new Dictionary<int, string>();
-            midiInDevices.Add(-1, "");
+            Dictionary<string, string> midiInDevices = new Dictionary<string, string>();
+            midiInDevices.Add("", "");
 
-            int selectedMidiINPUTDevId = -1;
-
-            for (int i = 0; i < MidiIn.NumberOfDevices; i++)
+            foreach (var midiInDev in Melanchall.DryWetMidi.Devices.InputDevice.GetAll())
             {
-                midiInDevices.Add(i, MidiIn.DeviceInfo(i).ProductName);
-                if (ApplicationSettings.MidiInputDeviceID != null && ApplicationSettings.MidiInputDeviceID == MidiIn.DeviceInfo(i).ProductName)
-                    selectedMidiINPUTDevId = i;
+                midiInDevices.Add(midiInDev.Name, midiInDev.Name);
             }
 
-            cbMidiInDevice.ItemsSource = midiInDevices.ToList();
+            //cbMidiInDevice.ItemsSource = Melanchall.DryWetMidi.Devices.InputDevice.GetAll();
+            cbMidiInDevice.ItemsSource = midiInDevices;
             cbMidiInDevice.SelectedValuePath = "Key";
             cbMidiInDevice.DisplayMemberPath = "Value";
 
-            cbMidiInDevice.SelectedValue = selectedMidiINPUTDevId;
+            var devIn = ApplicationSettings.MidiInputDeviceID != null ? InputDevice.GetByName(ApplicationSettings.MidiInputDeviceID) : null;
+
+            cbMidiInDevice.SelectedValue = devIn != null ? devIn.Name : "";
 
             //Popolo lista Devices Midi Output e Repeater
-            Dictionary<int, string> midiOutDevices = new Dictionary<int, string>();
-            midiOutDevices.Add(-1, "");
+            Dictionary<string, string> midiOutDevices = new Dictionary<string, string>();
+            midiOutDevices.Add("", "");
 
-            int selectedMidiOUTPUTDevId = -1;
-            int selectedMidiREPEATEDDevId = -1;
-
-            for (int i = 0; i < MidiOut.NumberOfDevices; i++)
+            foreach (var midiOutDev in Melanchall.DryWetMidi.Devices.OutputDevice.GetAll())
             {
-                midiOutDevices.Add(i, MidiOut.DeviceInfo(i).ProductName);
-                if (ApplicationSettings.MidiInputDeviceID != null && ApplicationSettings.MidiInputDeviceID == MidiIn.DeviceInfo(i).ProductName)
-                    selectedMidiOUTPUTDevId = i;
-                if (ApplicationSettings.MidiOutputRepeatedDeviceID != null && ApplicationSettings.MidiOutputRepeatedDeviceID == MidiIn.DeviceInfo(i).ProductName)
-                    selectedMidiREPEATEDDevId = i;
+                midiOutDevices.Add(midiOutDev.Name, midiOutDev.Name);
             }
 
 
@@ -83,13 +83,17 @@ namespace BoardyWPF
             cbMidiOutDevice.SelectedValuePath = "Key";
             cbMidiOutDevice.DisplayMemberPath = "Value";
 
-            cbMidiOutDevice.SelectedValue = selectedMidiOUTPUTDevId;
+            var devOut = ApplicationSettings.MidiOutputDeviceID != null ? InputDevice.GetByName(ApplicationSettings.MidiOutputDeviceID) : null;
+
+            cbMidiOutDevice.SelectedValue = devOut != null ? devOut.Name : "";
 
             cbMidiOutRepeaterDevice.ItemsSource = midiOutDevices.ToList();
             cbMidiOutRepeaterDevice.SelectedValuePath = "Key";
             cbMidiOutRepeaterDevice.DisplayMemberPath = "Value";
 
-            cbMidiOutRepeaterDevice.SelectedValue = selectedMidiREPEATEDDevId;
+            var devRepeat = ApplicationSettings.MidiOutputRepeatedDeviceID != null ? InputDevice.GetByName(ApplicationSettings.MidiOutputRepeatedDeviceID) : null;
+
+            cbMidiOutRepeaterDevice.SelectedValue = devRepeat != null ? devRepeat.Name : "";
         }
 
         private void cbAudioDevices_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -99,58 +103,39 @@ namespace BoardyWPF
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            ApplicationSettings.CallbackDeviceID = ((KeyValuePair<int, string>)cbAudioDevices.SelectedItem).Value;
+            ApplicationSettings.CallbackDeviceID = (string)cbAudioDevices.SelectedValue;
 
 
-            if (((KeyValuePair<int, string>)cbMidiInDevice.SelectedItem).Key == -1)
-                ApplicationSettings.MidiInputDeviceID = null;
-            else
-                ApplicationSettings.MidiInputDeviceID = ((KeyValuePair<int, string>)cbMidiInDevice.SelectedItem).Value;
+            ApplicationSettings.MidiInputDeviceID = (string)cbMidiInDevice.SelectedValue;
 
+            ApplicationSettings.MidiOutputDeviceID = (string)cbMidiOutDevice.SelectedValue;
 
-            if (((KeyValuePair<int, string>)cbMidiOutDevice.SelectedItem).Key == -1)
-                ApplicationSettings.MidiOutputDeviceID = null;
-            else
-                ApplicationSettings.MidiOutputDeviceID = ((KeyValuePair<int, string>)cbMidiOutDevice.SelectedItem).Value;
-
-
-            if (((KeyValuePair<int, string>)cbMidiOutRepeaterDevice.SelectedItem).Key == -1)
-                ApplicationSettings.MidiOutputRepeatedDeviceID = null;
-            else
-                ApplicationSettings.MidiOutputRepeatedDeviceID = ((KeyValuePair<int, string>)cbMidiOutRepeaterDevice.SelectedItem).Value;
+            ApplicationSettings.MidiOutputRepeatedDeviceID = (string)cbMidiOutRepeaterDevice.SelectedValue;
 
 
             ApplicationSettings.SaveConfig();
 
             //Reload Midi Devices
             GlobalStaticContext.DetachAllMidiDevices();
-            if (((KeyValuePair<int, string>)cbMidiInDevice.SelectedItem).Key != -1)
-                GlobalStaticContext.AttachMidiInDevice(((KeyValuePair<int, string>)cbMidiInDevice.SelectedItem).Key);
+            ApplicationSettings.MidiInputDeviceID = (string)cbMidiInDevice.SelectedValue;
 
-            if (((KeyValuePair<int, string>)cbMidiOutDevice.SelectedItem).Key != -1)
-                GlobalStaticContext.AttachMidiOutDevice(((KeyValuePair<int, string>)cbMidiOutDevice.SelectedItem).Key);
+            ApplicationSettings.MidiOutputDeviceID = (string)cbMidiOutDevice.SelectedValue;
 
-            if (((KeyValuePair<int, string>)cbMidiOutRepeaterDevice.SelectedItem).Key != -1)
-                GlobalStaticContext.AttachMidiRepeatDevice(((KeyValuePair<int, string>)cbMidiOutRepeaterDevice.SelectedItem).Key);
+            ApplicationSettings.MidiOutputRepeatedDeviceID = (string)cbMidiOutRepeaterDevice.SelectedValue;
+
+            GlobalStaticContext.AttachMidiInDevice(ApplicationSettings.MidiInputDeviceID);
+            GlobalStaticContext.AttachMidiOutDevice(ApplicationSettings.MidiOutputDeviceID);
+            GlobalStaticContext.AttachMidiRepeatDevice(ApplicationSettings.MidiOutputRepeatedDeviceID);
 
             this.Close();
         }
 
         private void cbMidiInDevice_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if ((int)cbMidiInDevice.SelectedValue != -1)
+            if ((string)cbMidiInDevice.SelectedValue != "")
             {
-                //Cerco stesso midi device per output
-                for (int i = 0; i < MidiOut.NumberOfDevices; i++)
-                {
-                    if (MidiOut.DeviceInfo(i).ProductName == MidiIn.DeviceInfo((int)cbMidiInDevice.SelectedValue).ProductName)
-                    {
-                        cbMidiOutDevice.SelectedValue = i;
-                    }
-                }
+                cbMidiOutDevice.SelectedValue = (string)cbMidiInDevice.SelectedValue;
             }
-            else
-                cbMidiOutDevice.SelectedValue = cbMidiOutRepeaterDevice.SelectedValue = -1;
         }
     }
 }

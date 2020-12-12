@@ -1,5 +1,7 @@
 ﻿using BoardyWPF.Controls;
-using NAudio.Midi;
+using Melanchall.DryWetMidi.Common;
+using Melanchall.DryWetMidi.Core;
+using Melanchall.DryWetMidi.Devices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,17 +12,17 @@ namespace BoardyWPF
     public static class GlobalStaticContext
     {
         private static List<Tuple<int, PadControl>> _midiPushButtonRegisteredPads = new List<Tuple<int, PadControl>>();
-        private static List<Tuple<MidiController, PadControl>> _midiVolumeSliderRegisteredPads = new List<Tuple<MidiController, PadControl>>();
+        private static List<Tuple<SevenBitNumber, PadControl>> _midiVolumeSliderRegisteredPads = new List<Tuple<SevenBitNumber, PadControl>>();
         private static List<PadControl> _allPads = new List<PadControl>();
-        private static MidiIn _midiIn;
-        private static MidiOut _midiOut;
-        private static MidiOut _repeatDevice;
+        private static InputDevice _midiIn;
+        private static OutputDevice _midiOut;
+        private static DevicesConnector _devConnector;
 
         private static bool LearnMode = false;
 
         public static List<PadControl> AllPads { get => _allPads; }
 
-        private static event EventHandler<MidiInMessageEventArgs> LearnCodeReaded;
+        private static event EventHandler<MidiEventReceivedEventArgs> LearnCodeReaded;
         public static void RegisterPadWithMidiNote(PadControl pad, int nota)
         {
             _midiPushButtonRegisteredPads.Add(new Tuple<int, PadControl>(nota, pad));
@@ -29,38 +31,17 @@ namespace BoardyWPF
         {
             _allPads.Add(pad);
         }
-        public static void AttachMidiInDevice(int midiDeviceId)
+        public static void AttachMidiInDevice(string midiDeviceId)
         {
-            _midiIn = new MidiIn(midiDeviceId);
-            _midiIn.MessageReceived += _midiIn_MessageReceived;
-            _midiIn.Start();
-        }
-        public static void AttachMidiOutDevice(int midiDeviceId)
-        {
-            _midiOut = new MidiOut(midiDeviceId);
-        }
-        public static void AttachMidiRepeatDevice(int midiDeviceId)
-        {
-            _repeatDevice = new MidiOut(midiDeviceId);
-        }
-        internal static void DetachAllMidiDevices()
-        {
+            _midiIn = InputDevice.GetByName(midiDeviceId);
             if (_midiIn != null)
-                _midiIn.Close();
-
-            if (_midiOut != null)
-                _midiOut.Close();
-
-            if (_repeatDevice != null)
-                _repeatDevice.Close();
+            {
+                _midiIn.EventReceived += _midiIn_EventReceived;
+                _midiIn.StartEventsListening();
+            }
         }
 
-        public static void SendMidiMessage(int rawMessage)
-        {
-            _midiOut.Send(rawMessage);
-        }
-
-        private static void _midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
+        private static void _midiIn_EventReceived(object sender, MidiEventReceivedEventArgs e)
         {
             if (LearnMode)
             {
@@ -68,65 +49,67 @@ namespace BoardyWPF
             }
             else
             {
-                if (e.MidiEvent.CommandCode == MidiCommandCode.NoteOn)
+                if (e.Event.EventType == Melanchall.DryWetMidi.Core.MidiEventType.NoteOn)
                 {
-                    var evento = (NoteOnEvent)e.MidiEvent;
+                    var evento = (Melanchall.DryWetMidi.Core.NoteOnEvent)e.Event;
+
+                    if(ApplicationSettings.MidiChannel != evento.Channel)
+                    {
+                        ApplicationSettings.MidiChannel = evento.Channel;
+                        ApplicationSettings.SaveConfig();
+                    }    
+
                     _midiPushButtonRegisteredPads.Where(x => x.Item1 == evento.NoteNumber).ToList().ForEach(x =>
                     {
                         x.Item2.PlaySound();
                     });
                 }
 
-                if (e.MidiEvent.CommandCode == MidiCommandCode.ControlChange)
+                if (e.Event.EventType == Melanchall.DryWetMidi.Core.MidiEventType.ControlChange)
                 {
-                    var evento = (ControlChangeEvent)e.MidiEvent;
-                    _midiVolumeSliderRegisteredPads.Where(x => x.Item1 == evento.Controller).ToList().ForEach(x =>
+                    var evento = (Melanchall.DryWetMidi.Core.ControlChangeEvent)e.Event;
+                    _midiVolumeSliderRegisteredPads.Where(x => x.Item1 == evento.ControlNumber).ToList().ForEach(x =>
                     {
-                        x.Item2.ChangeVolume(evento.ControllerValue, true);
+                        x.Item2.ChangeVolume(evento.ControlValue, true);
                     });
                 }
             }
-
-            _repeatDevice.Send(e.RawMessage);
-
-            switch (e.MidiEvent.CommandCode)
-            {
-                case MidiCommandCode.NoteOff:
-                    break;
-                case MidiCommandCode.NoteOn:
-                    break;
-                case MidiCommandCode.KeyAfterTouch:
-                    break;
-                case MidiCommandCode.ControlChange:
-                    break;
-                case MidiCommandCode.PatchChange:
-                    break;
-                case MidiCommandCode.ChannelAfterTouch:
-                    break;
-                case MidiCommandCode.PitchWheelChange:
-                    break;
-                case MidiCommandCode.Sysex:
-                    break;
-                case MidiCommandCode.Eox:
-                    break;
-                case MidiCommandCode.TimingClock:
-                    break;
-                case MidiCommandCode.StartSequence:
-                    break;
-                case MidiCommandCode.ContinueSequence:
-                    break;
-                case MidiCommandCode.StopSequence:
-                    break;
-                case MidiCommandCode.AutoSensing:
-                    break;
-                case MidiCommandCode.MetaEvent:
-                    break;
-                default:
-                    break;
-            }
         }
 
-        public static void EnterLearnMode(EventHandler<MidiInMessageEventArgs> eventHandler)
+        public static void AttachMidiOutDevice(string midiDeviceId)
+        {
+            if (_midiOut != null)
+                _midiOut.Dispose();
+            _midiOut = OutputDevice.GetByName(midiDeviceId);
+            if (_midiIn != null)
+            {
+                _midiOut.PrepareForEventsSending();
+            }
+        }
+        public static void AttachMidiRepeatDevice(string midiDeviceId)
+        {
+            var listoutDev = _devConnector != null ? _devConnector.OutputDevices.ToList() : new List<IOutputDevice>();
+            var repeatDev = OutputDevice.GetByName(midiDeviceId);
+            if (repeatDev != null)
+            {
+                listoutDev.Add(repeatDev);
+
+                if (_devConnector != null)
+                    _devConnector.Disconnect();
+
+                _devConnector = _midiIn.Connect(listoutDev.ToArray());
+            }
+        }
+        internal static void DetachAllMidiDevices()
+        {
+            if (_devConnector != null)
+                _devConnector.Disconnect();
+
+            if (_midiIn != null)
+                _midiIn.Dispose();
+        }
+
+        public static void EnterLearnMode(EventHandler<MidiEventReceivedEventArgs> eventHandler)
         {
             LearnMode = true;
             LearnCodeReaded = eventHandler;
@@ -138,9 +121,20 @@ namespace BoardyWPF
             LearnCodeReaded = null;
         }
 
-        internal static void RegisterPadWithMidiController(PadControl padControl, MidiController volumeSliderMidiController)
+        internal static void RegisterPadWithMidiController(PadControl padControl, SevenBitNumber volumeSliderMidiController)
         {
-            _midiVolumeSliderRegisteredPads.Add(new Tuple<MidiController, PadControl>(volumeSliderMidiController, padControl));
+            _midiVolumeSliderRegisteredPads.Add(new Tuple<SevenBitNumber, PadControl>(volumeSliderMidiController, padControl));
+        }
+
+        public static void SendOutputFeedbackMessage(MidiEvent midiEvent)
+        {
+            switch (midiEvent.EventType)
+            {
+                case MidiEventType.NoteOn:
+                case MidiEventType.NoteOff: ((NoteEvent)midiEvent).Channel = (FourBitNumber)ApplicationSettings.MidiChannel; break;
+            }
+
+            _midiOut.SendEvent(midiEvent);
         }
 
         internal static void RemovePad(PadControl padControl)
@@ -150,7 +144,7 @@ namespace BoardyWPF
             if (padControl._pushButtonMidiNote != -1)
                 _midiPushButtonRegisteredPads.RemoveAll(x => x.Item1 == padControl._pushButtonMidiNote);
 
-            if (padControl._volumeSliderMidiController.HasValue)
+            if (padControl._volumeSliderMidiController > 0)
                 _midiVolumeSliderRegisteredPads.RemoveAll(x => x.Item1 == padControl._volumeSliderMidiController);
         }
     }

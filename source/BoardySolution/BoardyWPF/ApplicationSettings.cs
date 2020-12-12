@@ -57,6 +57,17 @@ namespace BoardyWPF
                 _sets.MidiOutputRepeatedDeviceID = value;
             }
         }
+        public static int MidiChannel
+        {
+            get
+            {
+                return _sets.MidiChannel;
+            }
+            set
+            {
+                _sets.MidiChannel = value;
+            }
+        }
         public static List<PadControlSettingModel> PadControls
         {
             get
@@ -94,6 +105,7 @@ namespace BoardyWPF
         public static void LoadConfig()
         {
             JsonSerializerSettings settings = new JsonSerializerSettings();
+            settings.NullValueHandling = NullValueHandling.Ignore;
 
             try
             {
@@ -115,6 +127,8 @@ namespace BoardyWPF
             internal string MidiOutputDeviceID { get; set; }
             [JsonProperty]
             internal string MidiOutputRepeatedDeviceID { get; set; }
+            [JsonProperty]
+            internal int MidiChannel { get; set; }
             [JsonProperty]
             internal List<PadControlSettingModel> PadControls { get; set; }
 

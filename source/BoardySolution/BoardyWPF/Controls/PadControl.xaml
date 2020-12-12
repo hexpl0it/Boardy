@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:BoardyWPF.Controls"
-             mc:Ignorable="d" Padding="10,10,0,0">
+             mc:Ignorable="d" Padding="0,0,0,0">
     <UserControl.Resources>
         <Style TargetType="ProgressBar" x:Key="VolumeMeter">
             <Setter Property="Template">
@@ -13,10 +13,10 @@
                         <Grid x:Name="Root">
                             <Border 
                 Name="PART_Track" 
-                CornerRadius="2" 
+                CornerRadius="0" 
                 Background="LightBlue"
                 BorderBrush="#2c3d4d"
-                BorderThickness="2">
+                BorderThickness="0">
                                 <!--<Border.Background>
                   <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                     <GradientStop Offset="0" Color="#FF00FF00"/>
@@ -27,9 +27,9 @@
                 </Border.Background>-->
                             </Border>
                             <Border 
-                CornerRadius="2" 
+                CornerRadius="0" 
                 BorderBrush="#2c3d4d" 
-                BorderThickness="2" 
+                BorderThickness="0" 
                 HorizontalAlignment="Left">
                                 <DockPanel>
                                     <Rectangle Name="PART_Indicator"></Rectangle>
@@ -65,7 +65,7 @@
         </Style>
     </UserControl.Resources>
     <Grid>
-        <Button Name="btnPlaySound" Click="btnPlaySound_Click" Height="170" Width="170" Background="#c9c9c9" Padding="10" ContextMenuOpening="btnPlaySound_ContextMenuOpening">
+        <Button Name="btnPlaySound" Click="btnPlaySound_Click" Height="168" Width="170" VerticalAlignment="Top" Background="#c9c9c9" Padding="10" ContextMenuOpening="btnPlaySound_ContextMenuOpening" Margin="0,2,0,0">
             <Button.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Carica Sample" Click="LoadSampleMenuItem_Click" />
@@ -79,7 +79,17 @@
                 </ContextMenu>
             </Button.ContextMenu>
         </Button>
-        <ProgressBar Name="VolumeMeter"  Width="15" Height="150" Value="75" Maximum="100" Orientation="Vertical" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Style="{StaticResource VolumeMeter}" />
+        <Label Visibility="Collapsed" x:Name="lblLearning" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="2,4,0,0" Content="L" Padding="0,0,0,0" FontSize="6" Width="5" Background="Red"/>
+        <ProgressBar Name="VolumeMeter"  Width="2" Height="170" Value="75" Maximum="100" Orientation="Vertical" Margin="0,-84,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Style="{StaticResource VolumeMeter}" RenderTransformOrigin="0.5,0.5" >
+            <ProgressBar.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform/>
+                    <RotateTransform Angle="90"/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </ProgressBar.RenderTransform>
+        </ProgressBar>
         <Label Name="lblFileName" BorderThickness="4" BorderBrush="Transparent" HorizontalAlignment="Center" VerticalAlignment="Center"/>
     </Grid>
 </UserControl>

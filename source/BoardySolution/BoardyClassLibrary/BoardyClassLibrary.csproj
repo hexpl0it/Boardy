@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.23" />
-    <PackageReference Include="NAudio" Version="1.10.0" />
+    <PackageReference Include="CSCore" Version="1.2.1.2" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.28" />
   </ItemGroup>
 
 </Project>

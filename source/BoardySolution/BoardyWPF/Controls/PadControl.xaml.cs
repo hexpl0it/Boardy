@@ -1,7 +1,8 @@
 ﻿using BoardyClassLibrary;
+using CSCore.CoreAudioAPI;
+using Melanchall.DryWetMidi.Common;
+using Melanchall.DryWetMidi.Devices;
 using Microsoft.Win32;
-using NAudio.Midi;
-using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -26,51 +27,35 @@ namespace BoardyWPF.Controls
         {
             InitializeComponent();
 
-            int callbackdeviceID = -1;
-
-            for (int i = 0; i < WaveOut.DeviceCount; i++)
-            {
-                if (WaveOut.GetCapabilities(i).ProductName == ApplicationSettings.CallbackDeviceID)
-                    callbackdeviceID = i;
-            }
-
-            _player = new AudioPlayer("", callbackdeviceID);
+            _player = new AudioPlayer();
             _player.OnSoundStateChange += _player_OnSoundStateChange;
             _player.OnAudioTrackChange += _player_OnAudioTrackChange;
             ChangeVolume(100, false);
         }
 
-        public PadControl(string audiodevice, float volume, string audioFilePath, int midiNote, MidiController? volumeSilderContr)
+        public PadControl(string audiodevice, float volume, string audioFilePath, int midiNote, SevenBitNumber volumeSilderContr)
         {
             InitializeComponent();
 
-            int audiodeviceID = -1;
-            int callbackdeviceID = -1;
+            MMDevice mmAudioDev = new MMDeviceEnumerator().GetDeviceFromPath(audiodevice);
 
-            for (int i = 0; i < WaveOut.DeviceCount; i++)
-            {
-                if (WaveOut.GetCapabilities(i).ProductName == audiodevice)
-                    audiodeviceID = i;
-                if (WaveOut.GetCapabilities(i).ProductName == ApplicationSettings.CallbackDeviceID)
-                    callbackdeviceID = i;
-            }
 
-            _player = new AudioPlayer("", callbackdeviceID);
+            _player = new AudioPlayer();
             _player.OnSoundStateChange += _player_OnSoundStateChange;
             _player.OnAudioTrackChange += _player_OnAudioTrackChange;
 
-            _player.ChangeAudioDevice(audiodeviceID);
+            _player.ChangeAudioDevice(mmAudioDev);
             _player.ChangeAudioTrack(audioFilePath);
-            ChangeVolume(Convert.ToInt32(volume * 100), false);
+            ChangeVolume(Convert.ToInt32(volume), false);
 
             this._pushButtonMidiNote = midiNote;
-            if(this._pushButtonMidiNote != -1)
+            if (this._pushButtonMidiNote != -1)
                 GlobalStaticContext.RegisterPadWithMidiNote(this, midiNote);
 
-            if (volumeSilderContr.HasValue)
+            if (volumeSilderContr > 0)
             {
-                this._volumeSliderMidiController = volumeSilderContr.Value;
-                GlobalStaticContext.RegisterPadWithMidiController(this, volumeSilderContr.Value);
+                this._volumeSliderMidiController = volumeSilderContr;
+                GlobalStaticContext.RegisterPadWithMidiController(this, volumeSilderContr);
             }
         }
 
@@ -84,7 +69,7 @@ namespace BoardyWPF.Controls
         {
             get
             {
-                return _player._fileAudioPath;
+                return _player.AudioFilepath;
             }
 
             set
@@ -96,24 +81,12 @@ namespace BoardyWPF.Controls
         {
             get
             {
-                return WaveOut.GetCapabilities(_player._idAudioDevice).ProductName;
-            }
-
-            set
-            {
-                int audioDevID = -1;
-
-                for (int i = 0; i < WaveOut.DeviceCount; i++)
-                {
-                    if (WaveOut.GetCapabilities(i).ProductName == value)
-                        audioDevID = i;
-                }
-                _player.ChangeAudioDevice(audioDevID);
+                return _player.AudioDevice.DevicePath;
             }
         }
         internal int _pushButtonMidiNote = -1;
-        internal MidiController? _volumeSliderMidiController = null;
-        internal float _volume
+        internal SevenBitNumber _volumeSliderMidiController;
+        internal int _volume
         {
             get
             {
@@ -127,18 +100,22 @@ namespace BoardyWPF.Controls
         }
         private void _player_OnSoundStateChange(AudioPlayer.SoundState state)
         {
-            if (_pushButtonMidiNote > 0)
+
+            if (state == AudioPlayer.SoundState.Started)
             {
-                if (state == AudioPlayer.SoundState.Started)
+                if (_pushButtonMidiNote > 0)
                 {
-                    GlobalStaticContext.SendMidiMessage(MidiMessage.StartNote(_pushButtonMidiNote, 24, 1).RawData);
-                    Application.Current.Dispatcher.Invoke(new Action(() => { btnPlaySound.Background = new SolidColorBrush(Color.FromRgb(123, 237, 154)); }));
+                    GlobalStaticContext.SendOutputFeedbackMessage(new Melanchall.DryWetMidi.Core.NoteOnEvent((SevenBitNumber)_pushButtonMidiNote, SevenBitNumber.MaxValue));
                 }
-                else
+                Application.Current.Dispatcher.Invoke(new Action(() => { btnPlaySound.Background = new SolidColorBrush(Color.FromRgb(123, 237, 154)); }));
+            }
+            else
+            {
+                if (_pushButtonMidiNote > 0)
                 {
-                    GlobalStaticContext.SendMidiMessage(MidiMessage.StopNote(_pushButtonMidiNote, 0, 1).RawData);
-                    Application.Current.Dispatcher.Invoke(new Action(() => { btnPlaySound.Background = new SolidColorBrush(Color.FromRgb(201, 201, 201)); }));
+                    GlobalStaticContext.SendOutputFeedbackMessage(new Melanchall.DryWetMidi.Core.NoteOffEvent((SevenBitNumber)_pushButtonMidiNote, SevenBitNumber.MaxValue));
                 }
+                Application.Current.Dispatcher.Invoke(new Action(() => { btnPlaySound.Background = new SolidColorBrush(Color.FromRgb(201, 201, 201)); }));
             }
         }
 
@@ -162,11 +139,11 @@ namespace BoardyWPF.Controls
         internal void ChangeVolume(int controllerValue, bool fromMidi)
         {
             int newVal = controllerValue;
-            
-            if(fromMidi)
-                newVal =  Convert.ToInt32(((controllerValue + 1F) * 100F / 128F) - 1F);
 
-            _player.Volume = Convert.ToSingle(newVal) / 100;
+            if (fromMidi)
+                newVal = Convert.ToInt32(((controllerValue + 1F) * 100F / 128F) - 1F);
+
+            _player.Volume = newVal;
 
 
             Application.Current.Dispatcher.Invoke(new Action(() => { VolumeMeter.Value = newVal; }));
@@ -174,13 +151,9 @@ namespace BoardyWPF.Controls
 
         public void PlaySound()
         {
-            _player.PlaySound();
+            _player.Play();
         }
 
-        public void ChangeAudioDevice(int audioDev)
-        {
-            _player.ChangeAudioDevice(audioDev);
-        }
         public void ChangeAudioTrack(string audioPathFile)
         {
             _player.ChangeAudioTrack(audioPathFile);
@@ -205,57 +178,74 @@ namespace BoardyWPF.Controls
         {
             AudioDevicesSubMenu.Items.Clear();
 
-            Dictionary<int, string> outDevices = new Dictionary<int, string>();
-
-            for (int i = 0; i < WaveOut.DeviceCount; i++)
+            using (var mmdeviceEnumerator = new MMDeviceEnumerator())
             {
-                outDevices.Add(i, WaveOut.GetCapabilities(i).ProductName);
-                MenuItem mi = new MenuItem();
-                mi.Header = i.ToString() + " - " + WaveOut.GetCapabilities(i).ProductName;
-                mi.Uid = "admi-" + i.ToString();
-                mi.Click += AudioDevicesSubMenuItem_Click;
+                using (
+                    var mmdeviceCollection = mmdeviceEnumerator.EnumAudioEndpoints(DataFlow.Render, DeviceState.Active))
+                {
+                    foreach (var device in mmdeviceCollection)
+                    {
+                        MenuItem mi = new MenuItem();
+                        mi.Header = device.FriendlyName;
+                        mi.Uid = device.DevicePath;
+                        mi.Click += AudioDevicesSubMenuItem_Click;
 
-                if (_audioDeviceID == WaveOut.GetCapabilities(i).ProductName)
-                    mi.IsChecked = true;
+                        if (_audioDeviceID == device.DevicePath)
+                            mi.IsChecked = true;
 
-                AudioDevicesSubMenu.Items.Add(mi);
+                        AudioDevicesSubMenu.Items.Add(mi);
+                    }
+                }
             }
         }
 
         private void AudioDevicesSubMenuItem_Click(object sender, RoutedEventArgs e)
         {
             MenuItem x = (MenuItem)sender;
-            _player.ChangeAudioDevice(Convert.ToInt32(x.Uid.Replace("admi-", "")));
+            using (var mmdeviceEnumerator = new MMDeviceEnumerator())
+            {
+                _player.ChangeAudioDevice(mmdeviceEnumerator.GetDeviceFromPath(x.Uid));
+            }
         }
 
         private void LearnMidiButton_Click(object sender, RoutedEventArgs e)
         {
+            lblLearning.Visibility = Visibility.Visible;
             GlobalStaticContext.EnterLearnMode(MidiPushButtonLearnCallback);
         }
 
-        private void MidiPushButtonLearnCallback(object sender, MidiInMessageEventArgs e)
+        private void MidiPushButtonLearnCallback(object sender, MidiEventReceivedEventArgs e)
         {
-            NoteOnEvent evento = (NoteOnEvent)e.MidiEvent;
+            Dispatcher.Invoke(() =>
+            {
+                lblLearning.Visibility = Visibility.Collapsed;
+            });
+            Melanchall.DryWetMidi.Core.NoteOnEvent evento = (Melanchall.DryWetMidi.Core.NoteOnEvent)e.Event;
             _pushButtonMidiNote = evento.NoteNumber;
             GlobalStaticContext.RegisterPadWithMidiNote(this, _pushButtonMidiNote);
             GlobalStaticContext.ExitLearnMode();
         }
 
-        private void MidiVolumeSliderLearnCallback(object sender, MidiInMessageEventArgs e)
+        private void MidiVolumeSliderLearnCallback(object sender, MidiEventReceivedEventArgs e)
         {
-            ControlChangeEvent evento = (ControlChangeEvent)e.MidiEvent;
-            _volumeSliderMidiController = evento.Controller;
-            GlobalStaticContext.RegisterPadWithMidiController(this, _volumeSliderMidiController.Value);
+            Dispatcher.Invoke(() =>
+            {
+                lblLearning.Visibility = Visibility.Collapsed;
+            });
+            Melanchall.DryWetMidi.Core.ControlChangeEvent evento = (Melanchall.DryWetMidi.Core.ControlChangeEvent)e.Event;
+            _volumeSliderMidiController = evento.ControlNumber;
+            GlobalStaticContext.RegisterPadWithMidiController(this, _volumeSliderMidiController);
             GlobalStaticContext.ExitLearnMode();
         }
 
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            _player.Volume = Convert.ToSingle(e.NewValue / 100);
+            _player.Volume = Convert.ToInt32(e.NewValue);
         }
 
         private void LearnMidiSlider_Click(object sender, RoutedEventArgs e)
         {
+            lblLearning.Visibility = Visibility.Visible;
             GlobalStaticContext.EnterLearnMode(MidiVolumeSliderLearnCallback);
         }
 

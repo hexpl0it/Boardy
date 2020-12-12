@@ -1,4 +1,8 @@
-﻿using NAudio.Wave;
+﻿using CSCore;
+using CSCore.Codecs;
+using CSCore.CoreAudioAPI;
+using CSCore.SoundOut;
+using CSCore.Streams;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,70 +14,198 @@ namespace BoardyClassLibrary
 {
     public class AudioPlayer
     {
-        public int _idAudioDevice { get; private set; }
-        private float _volume;
-        public float Volume
-        {
-            get
-            {
-                return _volume;
-            }
-            set
-            {
-                _volume = value;
-                if(afr != null)
-                    afr.Volume = value;
-            }
-        }
-        public string _fileAudioPath { get; private set; }
-        private WaveOut player = new WaveOut();
-        private AudioFileReader afr;
+        private ISoundOut _soundOut;
+        private IWaveSource _waveSource;
+        public string AudioFilepath { get; set; }
+        public MMDevice AudioDevice { get; set; }
 
         public enum SoundState
         {
-            Started, Stopped
+            Started, Stopped, Paused
         }
         public delegate void SoundStateChangeHandler(SoundState state);
         public event SoundStateChangeHandler OnSoundStateChange;
+
         public delegate void AudioTrackChangeHandler(string filePath);
         public event AudioTrackChangeHandler OnAudioTrackChange;
-        public delegate void LoopbackDeviceChangeHandler(int deviceId);
-        public event LoopbackDeviceChangeHandler OnLoopbackDeviceChange;
-        public AudioPlayer(string fileAudioPath, int audioDeviceID = 0)
+
+        public PlaybackState PlaybackState
         {
-            _idAudioDevice = audioDeviceID;
-            _fileAudioPath = fileAudioPath;
+            get
+            {
+                if (_soundOut != null)
+                    return _soundOut.PlaybackState;
+                return PlaybackState.Stopped;
+            }
         }
 
-        public void PlaySound()
+        public TimeSpan Position
         {
-            player.PlaybackStopped -= Player_PlaybackStopped;
-            player.Stop();
-            player = new WaveOut();
-            player.PlaybackStopped += Player_PlaybackStopped;
-            player.DeviceNumber = _idAudioDevice;
-            afr = new AudioFileReader(_fileAudioPath);
-            afr.Volume = this._volume;
-            player.Init(afr);
-            player.Play();
-
-            OnSoundStateChange?.Invoke(SoundState.Started);
+            get
+            {
+                if (_waveSource != null)
+                    return _waveSource.GetPosition();
+                return TimeSpan.Zero;
+            }
+            set
+            {
+                if (_waveSource != null)
+                    _waveSource.SetPosition(value);
+            }
         }
 
-        private void Player_PlaybackStopped(object sender, StoppedEventArgs e)
+        public TimeSpan Length
+        {
+            get
+            {
+                if (_waveSource != null)
+                    return _waveSource.GetLength();
+                return TimeSpan.Zero;
+            }
+        }
+
+        public int Volume
+        {
+            get
+            {
+                if (_soundOut != null)
+                    return Math.Min(100, Math.Max((int)(_soundOut.Volume * 100), 0));
+                return 100;
+            }
+            set
+            {
+                if (_soundOut != null)
+                {
+                    _soundOut.Volume = Math.Min(1.0f, Math.Max(value / 100f, 0f));
+                }
+            }
+        }
+
+        public AudioPlayer()
+        {
+            _waveSource = new SineGenerator().ToWaveSource();
+            MMDevice device = MMDeviceEnumerator.DefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            AudioDevice = device;
+            _soundOut = new WasapiOut() { Latency = 100, Device = AudioDevice };
+            _soundOut.Initialize(_waveSource);
+            _soundOut.Stopped += _soundOut_Stopped;
+        }
+
+        public AudioPlayer(string fileAudioPath, MMDevice device = null)
+        {
+            AudioFilepath = fileAudioPath;
+
+            if (device == null)
+            {
+                device = MMDeviceEnumerator.DefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            }
+
+            CleanupPlayback();
+
+            _waveSource =
+                CodecFactory.Instance.GetCodec(fileAudioPath)
+                    .ToSampleSource()
+                    .ToMono()
+                    .ToWaveSource();
+            AudioDevice = device;
+            _soundOut = new WasapiOut() { Latency = 100, Device = AudioDevice };
+            _soundOut.Initialize(_waveSource);
+            _soundOut.Stopped += _soundOut_Stopped;
+        }
+
+
+        private void _soundOut_Stopped(object sender, PlaybackStoppedEventArgs e)
         {
             OnSoundStateChange?.Invoke(SoundState.Stopped);
         }
 
-        public void ChangeAudioDevice(int idAudioDevice)
+        public void Play()
         {
-            _idAudioDevice = idAudioDevice;
-            OnLoopbackDeviceChange?.Invoke(idAudioDevice);
+            if (_soundOut != null)
+            {
+                _soundOut.WaveSource.SetPosition(TimeSpan.FromMilliseconds(0));
+                _soundOut.Play();
+                OnSoundStateChange?.Invoke(SoundState.Started);
+            }
         }
-        public void ChangeAudioTrack(string audioFilePath)
+
+        public void Pause()
         {
-            _fileAudioPath = audioFilePath;
-            OnAudioTrackChange?.Invoke(_fileAudioPath);
+            if (_soundOut != null)
+            {
+                _soundOut.Pause();
+                OnSoundStateChange?.Invoke(SoundState.Paused);
+            }
+        }
+
+        public void Stop()
+        {
+            if (_soundOut != null)
+            {
+                _soundOut.Stop();
+                //OnSoundStateChange?.Invoke(SoundState.Stopped);
+            }
+        }
+
+        private void CleanupPlayback()
+        {
+            if (_soundOut != null)
+            {
+                _soundOut.Dispose();
+                _soundOut = null;
+            }
+            if (_waveSource != null)
+            {
+                _waveSource.Dispose();
+                _waveSource = null;
+            }
+        }
+
+        public void ChangeAudioDevice(MMDevice device)
+        {
+            bool isPlaying = false;
+            TimeSpan position = TimeSpan.FromMilliseconds(0);
+            if(_soundOut.PlaybackState == PlaybackState.Playing)
+            {
+                isPlaying = true;
+                position = _soundOut.WaveSource.GetPosition();
+            }
+
+            if (_soundOut != null)
+            {
+                _soundOut.Dispose();
+                _soundOut = null;
+            }
+
+            AudioDevice = device;
+            _soundOut = new WasapiOut() { Latency = 100, Device = AudioDevice };
+            _soundOut.Initialize(_waveSource); 
+            _soundOut.Stopped += _soundOut_Stopped;
+            if (isPlaying)
+            {
+                _soundOut.WaveSource.SetPosition(position);
+                _soundOut.Play();
+            }
+        }
+
+        public void ChangeAudioTrack(string filePath)
+        {
+            AudioFilepath = filePath;
+            _soundOut.Stop();
+            if (_waveSource != null)
+            {
+                _waveSource.Dispose();
+                _waveSource = null;
+            }
+
+            _waveSource =
+                CodecFactory.Instance.GetCodec(filePath)
+                    .ToSampleSource()
+                    .ToMono()
+                    .ToWaveSource();
+
+            _soundOut.Initialize(_waveSource);
+            OnAudioTrackChange?.Invoke(filePath);
         }
     }
 }

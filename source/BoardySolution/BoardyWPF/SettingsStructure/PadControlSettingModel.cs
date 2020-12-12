@@ -1,16 +1,13 @@
-﻿using NAudio.Midi;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Melanchall.DryWetMidi.Common;
 
 namespace BoardyWPF.SettingsStructure
 {
     public class PadControlSettingModel
     {
         public string AudioFilePath { get; set; }
-        public float Volume { get; set; }
+        public int Volume { get; set; }
         public string AudioDeviceID { get; set; }
         public int MidiNoteMap { get; set; }
-        public MidiController? VolumeSliderControllerMap { get; set; }
+        public int VolumeSliderControllerMap { get; set; }
     }
 }
