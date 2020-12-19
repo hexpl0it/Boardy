@@ -65,12 +65,6 @@ namespace BoardyWPF
             WebSearchMainWindow wsw = new WebSearchMainWindow();
             wsw.OnFileDownloaded += Wsw_OnFileDownloaded;
             wsw.ShowDialog();
-
-            //Thread t = new Thread(() =>
-            //{
-            //    PlayMp3FromUrl(@"https://www.myinstants.com/media/sounds/erro.mp3");
-            //});
-            //t.Start();
         }
 
         private void Wsw_OnFileDownloaded(string pathFile)

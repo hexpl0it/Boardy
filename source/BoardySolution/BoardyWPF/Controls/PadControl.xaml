@@ -14,7 +14,7 @@
                             <Border 
                 Name="PART_Track" 
                 CornerRadius="0" 
-                Background="LightBlue"
+                Background="LightGreen"
                 BorderBrush="#2c3d4d"
                 BorderThickness="0">
                                 <!--<Border.Background>
@@ -29,7 +29,7 @@
                             <Border 
                 CornerRadius="0" 
                 BorderBrush="#2c3d4d" 
-                BorderThickness="0" 
+                BorderThickness="1" 
                 HorizontalAlignment="Left">
                                 <DockPanel>
                                     <Rectangle Name="PART_Indicator"></Rectangle>
@@ -65,7 +65,7 @@
         </Style>
     </UserControl.Resources>
     <Grid>
-        <Button Name="btnPlaySound" Click="btnPlaySound_Click" Height="168" Width="170" VerticalAlignment="Top" Background="#c9c9c9" Padding="10" ContextMenuOpening="btnPlaySound_ContextMenuOpening" Margin="0,2,0,0">
+        <Button Name="btnPlaySound" Click="btnPlaySound_Click" Height="170" Width="170" VerticalAlignment="Top" Background="#c9c9c9" Padding="10" ContextMenuOpening="btnPlaySound_ContextMenuOpening" Margin="0,0,0,0">
             <Button.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Carica Sample" Click="LoadSampleMenuItem_Click" />
@@ -80,7 +80,7 @@
             </Button.ContextMenu>
         </Button>
         <Label Visibility="Collapsed" x:Name="lblLearning" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="2,4,0,0" Content="L" Padding="0,0,0,0" FontSize="6" Width="5" Background="Red"/>
-        <ProgressBar Name="VolumeMeter"  Width="2" Height="170" Value="75" Maximum="100" Orientation="Vertical" Margin="0,-84,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Style="{StaticResource VolumeMeter}" RenderTransformOrigin="0.5,0.5" >
+        <ProgressBar Name="VolumeMeter"  Width="4" Height="160" Value="75" Maximum="100" Orientation="Vertical" Margin="0,-73,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Style="{StaticResource VolumeMeter}" RenderTransformOrigin="0.5,0.5" >
             <ProgressBar.RenderTransform>
                 <TransformGroup>
                     <ScaleTransform/>
@@ -90,6 +90,7 @@
                 </TransformGroup>
             </ProgressBar.RenderTransform>
         </ProgressBar>
-        <Label Name="lblFileName" BorderThickness="4" BorderBrush="Transparent" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Label Name="lblFileName" BorderThickness="4" BorderBrush="Transparent" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" MouseRightButtonUp="lblFileName_MouseRightButtonUp" />
+        <TextBox Name="tbxName" HorizontalAlignment="Center" VerticalAlignment="Center" Width="150" Visibility="Collapsed" KeyDown="tbxName_KeyDown" TextAlignment="Center" />
     </Grid>
 </UserControl>

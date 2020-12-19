@@ -1,4 +1,9 @@
-﻿using BoardyClassLibrary.WebIntegration;
+﻿using BoardyClassLibrary;
+using BoardyClassLibrary.WebIntegration;
+using CSCore;
+using CSCore.Codecs;
+using CSCore.CoreAudioAPI;
+using CSCore.SoundOut;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +29,7 @@ namespace BoardyWPF.Controls
         public delegate void SampleDownlaodHandler(string pathFile);
         public event SampleDownlaodHandler OnFileDownloaded;
 
-        //WaveOut waveOut = new WaveOut();
+        WaveOut waveOut = new WaveOut();
         IBoardyWebSample _sample;
         Stream _cache = null;
         Thread t;
@@ -37,17 +42,7 @@ namespace BoardyWPF.Controls
 
         private void BtnPlaySound_Click(object sender, RoutedEventArgs e)
         {
-            if (_cache == null)
-            {
-                _cache = new MemoryStream();
-                _sample.Download().CopyTo(_cache);
-            }
-
-            t = new Thread(() =>
-            {
-                //PlayMp3FromStream(_cache);
-            });
-            t.Start();
+            PlayMp3FromUrl(_sample.Url);
         }
 
         private void BtnDownloadSound_Click(object sender, RoutedEventArgs e)
@@ -61,42 +56,56 @@ namespace BoardyWPF.Controls
             OnFileDownloaded?.Invoke(filePath);
         }
 
-        //public void PlayMp3FromStream(Stream orig)
-        //{
-        //    using (Stream ms = new MemoryStream())
-        //    {
-        //        orig.Position = 0;
-        //        orig.CopyTo(ms);
+        public void PlayMp3FromUrl(string url)
+        {
+            using (var mmdeviceEnumerator = new MMDeviceEnumerator())
+            {
+                ISoundOut _soundOut;
+                IWaveSource _waveSource;
+                _waveSource = CodecFactory.Instance.GetCodec(new Uri(url))
+                        .ToSampleSource()
+                        .ToMono()
+                        .ToWaveSource();
+                MMDevice device = mmdeviceEnumerator.GetDeviceFromPath(ApplicationSettings.CallbackDeviceID);
+                _soundOut = new WasapiOut() { Latency = 100, Device = device };
+                _soundOut.Initialize(_waveSource);
+                _soundOut.Play();
+            }
+
+            //using (Stream ms = new MemoryStream())
+            //{
+            //    orig.Position = 0;
+            //    orig.CopyTo(ms);
 
 
-        //        ms.Position = 0;
-        //        using (WaveStream blockAlignedStream =
-        //            new BlockAlignReductionStream(
-        //                WaveFormatConversionStream.CreatePcmStream(
-        //                    new Mp3FileReader(ms))))
-        //        {
-        //            waveOut.Stop();
-        //            waveOut = new WaveOut();
+            //    ms.Position = 0;
+            //    using (WaveStream blockAlignedStream =
+            //        new BlockAlignReductionStream(
+            //            WaveFormatConversionStream.CreatePcmStream(
+            //                new Mp3FileReader(ms))))
+            //    {
+            //        waveOut.Stop();
+            //        waveOut = new WaveOut();
 
-        //            int callbackdeviceID = -1;
+            //        int callbackdeviceID = -1;
 
-        //            for (int i = 0; i < WaveOut.DeviceCount; i++)
-        //            {
-        //                if (WaveOut.GetCapabilities(i).ProductName == ApplicationSettings.CallbackDeviceID)
-        //                    callbackdeviceID = i;
-        //            }
+            //        for (int i = 0; i < WaveOut.DeviceCount; i++)
+            //        {
+            //            if (WaveOut.GetCapabilities(i).ProductName == ApplicationSettings.CallbackDeviceID)
+            //                callbackdeviceID = i;
+            //        }
 
 
-        //            waveOut.DeviceNumber = callbackdeviceID;
-        //            waveOut.Init(blockAlignedStream);
-        //            waveOut.Play();
-        //            while (waveOut.PlaybackState == PlaybackState.Playing)
-        //            {
-        //                System.Threading.Thread.Sleep(10);
-        //            }
+            //        waveOut.DeviceNumber = callbackdeviceID;
+            //        waveOut.Init(blockAlignedStream);
+            //        waveOut.Play();
+            //        while (waveOut.PlaybackState == PlaybackState.Playing)
+            //        {
+            //            System.Threading.Thread.Sleep(10);
+            //        }
 
-        //        }
-        //    }
-        //}
+            //    }
+            //}
+        }
     }
 }

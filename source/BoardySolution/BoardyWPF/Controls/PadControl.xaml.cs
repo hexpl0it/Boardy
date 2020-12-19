@@ -62,6 +62,7 @@ namespace BoardyWPF.Controls
         private void _player_OnAudioTrackChange(string filePath)
         {
             lblFileName.Content = System.IO.Path.GetFileNameWithoutExtension(filePath);
+            lblFileName.Visibility = Visibility.Visible;
         }
 
         private AudioPlayer _player;
@@ -255,6 +256,26 @@ namespace BoardyWPF.Controls
             parent.Children.Remove(this);
             GlobalStaticContext.RemovePad(this);
             //MainWrapPanel.Children.Add(pc);
+        }
+
+        private void tbxName_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.Key == Key.Enter)
+            {
+                lblFileName.Content = tbxName.Text;
+                tbxName.Visibility = Visibility.Collapsed;
+                lblFileName.Visibility = Visibility.Visible;
+            }    
+        }
+
+        private void lblFileName_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            lblFileName.Visibility = Visibility.Hidden;
+            tbxName.Visibility = Visibility.Visible;
+
+            tbxName.Focus();
+            tbxName.SelectAll();
+            e.Handled = true;
         }
     }
 }
