@@ -18,6 +18,6 @@
         <ComboBox x:Name="cbMidiInDevice" Canvas.Left="24" Canvas.Top="81" Width="238" SelectionChanged="cbMidiInDevice_SelectionChanged" />
         <ComboBox x:Name="cbMidiOutDevice" Canvas.Left="284" Canvas.Top="81" Width="238" />
         <ComboBox x:Name="cbMidiOutRepeaterDevice" Canvas.Left="536" Canvas.Top="81" Width="238" />
-
+        <CheckBox x:Name="ckbStartup" Content="Esegui all'avvio di Windows" Canvas.Left="609" Canvas.Top="20" Checked="ckbStartup_Checked" Unchecked="ckbStartup_Unchecked"/>
     </Canvas>
 </Window>

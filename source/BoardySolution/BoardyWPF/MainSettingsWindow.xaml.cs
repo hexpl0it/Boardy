@@ -22,6 +22,7 @@ namespace BoardyWPF
     /// </summary>
     public partial class MainSettingsWindow : Window
     {
+        StartupHelper.StartupManager mngr = new StartupHelper.StartupManager("BoardyWPF", StartupHelper.RegistrationScope.Local);
         public MainSettingsWindow()
         {
             InitializeComponent();
@@ -94,6 +95,8 @@ namespace BoardyWPF
             var devRepeat = ApplicationSettings.MidiOutputRepeatedDeviceID != null ? InputDevice.GetByName(ApplicationSettings.MidiOutputRepeatedDeviceID) : null;
 
             cbMidiOutRepeaterDevice.SelectedValue = devRepeat != null ? devRepeat.Name : "";
+
+            ckbStartup.IsChecked = mngr.IsRegistered;
         }
 
         private void cbAudioDevices_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -136,6 +139,16 @@ namespace BoardyWPF
             {
                 cbMidiOutDevice.SelectedValue = (string)cbMidiInDevice.SelectedValue;
             }
+        }
+
+        private void ckbStartup_Checked(object sender, RoutedEventArgs e)
+        {
+            mngr.Register();
+        }
+
+        private void ckbStartup_Unchecked(object sender, RoutedEventArgs e)
+        {
+            mngr.Unregister();
         }
     }
 }
