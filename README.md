@@ -5,7 +5,7 @@ Boardy is a soundboard with MIDI support developed using WPF and C#, that use NA
 
 It has a built in function for search the web and add your sound directly from the websites.
 
-Boardy is good metched with [Voicemeeter](https://www.vb-audio.com/Voicemeeter/index.htm).
+Boardy is good matched with [Voicemeeter](https://www.vb-audio.com/Voicemeeter/index.htm).
 
 
 
